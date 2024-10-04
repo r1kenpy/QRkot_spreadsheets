@@ -13,6 +13,7 @@
 - Pydantic
 - SQLAlchemy
 - Alembic
+- Aiogoogle
 
 ### Эндпоинты проекта
 
@@ -32,25 +33,14 @@
 Подробную информацию об эндпоинтах можно посмотреть локально после запуска проекта в [документации](http://127.0.0.1:8000/docs#/)
 
 ### Есть возможность создать отчет в google spreadsheets.
-Для создания отчета нужно добавить в файл .env:
-- Информация полученная после создания проекта в и создания приватного ключа в google cloud:
-  - TYPE
-  - PROJECT_ID
-  - PRIVATE_KEY_ID
-  - PRIVATE_KEY
-  - CLIENT_EMAIL
-  - CLIENT_ID
-  - AUTH_URI
-  - TOKEN_URI
-  - AUTH_PROVIDER_X509_CERT_URL
-  - CLIENT_X509_CERT_URL
-- EMAIL - электронная почта, которой будет доступен отчет.
+В отчете содержится: название проекта, время сбора средств на проект, описание проекта, дата создания отчета.
+
 
 
 ### Как развернуть проект
 
 - Клонируем проект командой `git clone git@github.com:r1kenpy/QRkot_spreadsheets.git`;
-- Переходим в папку проекта `cd cat_charity_fund`;
+- Переходим в папку проекта `cd QRkot_spreadsheets`;
 - Создаем виртуальное окружение командой `python3 -m venv venv` если у вас Linux/macOS или `python -m venv venv` если у вас windows;
 - Активируем виртуальное окружение:
   - Если у вас Linux/macOS `source venv/bin/activate`;
@@ -62,7 +52,19 @@
   - DATABASE_URL - Ссылка для связи с базой данных;
   - SECRET - Переменная для хеширования паролей;
   - FIRST_SUPERUSER_EMAIL - Эмейл суперпользователя;
-  - FIRST_SUPERUSER_PASSWORD - Пароль суперпользователя.
+  - FIRST_SUPERUSER_PASSWORD - Пароль суперпользователя. 
+  - Информация полученная после создания проекта в и создания приватного ключа в google cloud:
+    - TYPE
+    - PROJECT_ID
+    - PRIVATE_KEY_ID
+    - PRIVATE_KEY
+    - CLIENT_EMAIL
+    - CLIENT_ID
+    - AUTH_URI
+    - TOKEN_URI
+    - AUTH_PROVIDER_X509_CERT_URL
+    - CLIENT_X509_CERT_URL
+  - EMAIL - электронная почта, которой будет доступен отчет.
 - Применяем миграции `alembic upgrade head`;
 - Запускаем проект `uvicorn app.main:app --reload`;
 - Переходим на странице документации [Swagger](http://127.0.0.1:8000/docs#/) или [ReDoc](http://127.0.0.1:8000/redoc).
