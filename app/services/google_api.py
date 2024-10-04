@@ -1,7 +1,7 @@
+from copy import deepcopy
 from datetime import datetime
 
 from aiogoogle import Aiogoogle
-from fastapi import HTTPException
 
 from app.core.config import settings
 from app.services.utils import create_rows_projects_for_table
@@ -36,14 +36,8 @@ SPREADSHEET_BODY = dict(
     ],
 )
 
-MORE_ROWS_ERROR = (
-    'Попытка записать в табилцу {len_table_values} строк. '
-    'Таблица может вместить не больше {ROW_COUNT} строк'
-)
-MORE_COLUMNS_ERROR = (
-    'Попытка записать в табилцу {len_table_column} колонок. '
-    'Таблица может вместить не больше {COLUMN_COUNT} колонок'
-)
+MORE_ROWS_ERROR = 'Нельзя записать в табилцу {len_table_values} строк.'
+MORE_COLUMNS_ERROR = 'Нельзя записать в табилцу {len_table_column} колонок.'
 
 
 async def spreadsheets_create(
@@ -51,11 +45,10 @@ async def spreadsheets_create(
 ) -> tuple[str, str]:
     now_date_time = datetime.now().strftime(FORMAT)
     service = await wrapper_services.discover('sheets', 'v4')
-    copy_body_table = body_table.copy()
-    copy_body_table['properties']['title'] = copy_body_table['properties'][
+    spreadsheet_body = deepcopy(body_table)
+    spreadsheet_body['properties']['title'] = spreadsheet_body['properties'][
         'title'
     ].format(now_date_time=now_date_time)
-    spreadsheet_body = copy_body_table
 
     response = await wrapper_services.as_service_account(
         service.spreadsheets.create(json=spreadsheet_body)
@@ -85,32 +78,26 @@ async def spreadsheets_update_value(
 ) -> None:
     rows = create_rows_projects_for_table(projects)
     service = await wrapper_services.discover('sheets', 'v4')
-    table_header = TABLE_HEADER.copy()
+    table_header = deepcopy(TABLE_HEADER)
     table_header[0][1] = datetime.now().strftime(FORMAT)
     table_values = [
         *[*table_header],
         *[list(map(str, row)) for row in rows],
     ]
     if len(table_values) > ROW_COUNT:
-        raise HTTPException(
-            status_code=400,
-            detail=MORE_ROWS_ERROR.format(
-                ROW_COUNT=ROW_COUNT, len_table_values=len(table_values)
-            ),
+        raise TypeError(
+            MORE_ROWS_ERROR.format(len_table_values=len(table_values)),
         )
     for row in table_values:
-        if len(row) > 3:
-            raise HTTPException(
-                status_code=400,
-                detail=MORE_COLUMNS_ERROR.format(
-                    len_table_column=len(row), COLUMN_COUNT=COLUMN_COUNT
-                ),
+        if len(row) > COLUMN_COUNT:
+            raise TypeError(
+                MORE_COLUMNS_ERROR.format(len_table_column=len(row)),
             )
     update_body = {'majorDimension': 'ROWS', 'values': table_values}
     await wrapper_services.as_service_account(
         service.spreadsheets.values.update(
             spreadsheetId=spreadsheet_id,
-            range=f'R1C1:R{ROW_COUNT}C{COLUMN_COUNT}',
+            range=f'R1C1:R{len(table_values)}C{max(map(len, table_values))}',
             valueInputOption='USER_ENTERED',
             json=update_body,
         )
