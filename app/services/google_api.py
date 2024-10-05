@@ -36,8 +36,13 @@ SPREADSHEET_BODY = dict(
     ],
 )
 
-MORE_ROWS_ERROR = 'Нельзя записать в табилцу {len_table_values} строк.'
-MORE_COLUMNS_ERROR = 'Нельзя записать в табилцу {len_table_column} колонок.'
+MORE_ROWS_ERROR = (
+    'Нельзя записать в табилцу {len_table_values} строк. Максимум {max_rows}.'
+)
+MORE_COLUMNS_ERROR = (
+    'Нельзя записать в табилцу {len_table_column} колонок. '
+    'Максимум {max_columns}.'
+)
 
 
 async def spreadsheets_create(
@@ -84,20 +89,26 @@ async def spreadsheets_update_value(
         *[*table_header],
         *[list(map(str, row)) for row in rows],
     ]
-    if len(table_values) > ROW_COUNT:
-        raise TypeError(
-            MORE_ROWS_ERROR.format(len_table_values=len(table_values)),
+    len_rows_table = len(table_values)
+    max_len_table_column = max(map(len, table_values))
+    if len_rows_table > ROW_COUNT:
+        raise ValueError(
+            MORE_ROWS_ERROR.format(
+                len_table_values=len_rows_table, max_rows=ROW_COUNT
+            ),
         )
-    for row in table_values:
-        if len(row) > COLUMN_COUNT:
-            raise TypeError(
-                MORE_COLUMNS_ERROR.format(len_table_column=len(row)),
-            )
+    if max_len_table_column > COLUMN_COUNT:
+        raise ValueError(
+            MORE_COLUMNS_ERROR.format(
+                len_table_column=max_len_table_column,
+                max_columns=COLUMN_COUNT,
+            ),
+        )
     update_body = {'majorDimension': 'ROWS', 'values': table_values}
     await wrapper_services.as_service_account(
         service.spreadsheets.values.update(
             spreadsheetId=spreadsheet_id,
-            range=f'R1C1:R{len(table_values)}C{max(map(len, table_values))}',
+            range=f'R1C1:R{len_rows_table}C{max_len_table_column}',
             valueInputOption='USER_ENTERED',
             json=update_body,
         )
